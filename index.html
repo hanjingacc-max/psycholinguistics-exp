@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>语码切换实验</title>
+    <link rel="stylesheet" href="jspsych.css">
+    <script src="jspsych.js"></script>
+    <script src="plugins/jspsych-html-keyboard-response.js"></script>
+    <script src="plugins/jspsych-image-keyboard-response.js"></script>
+    <script src="plugins/jspsych-audio-keyboard-response.js"></script>
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            background: #2c3e50; 
+            font-family: 'Microsoft YaHei', sans-serif; 
+            color: #333; 
+            height: 100vh; 
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #experiment-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; position: relative; }
+
+        /* 图片与边框强制约束 */
+        #jspsych-image-keyboard-response-stimulus, 
+        .jspsych-image-keyboard-response-stimulus {
+            max-width: 550px !important;   
+            max-height: 400px !important;  
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain !important; 
+            background: white !important;
+            padding: 20px !important;       
+            box-sizing: border-box !important;
+            border-radius: 12px;
+            display: block !important;
+            margin: 0 auto !important;
+            position: relative;
+            z-index: 1;
+        }
+
+        .image-border { 
+            position: absolute; 
+            top: 50%; left: 50%; 
+            transform: translate(-50%, -50%); 
+            width: 580px; height: 430px; 
+            pointer-events: none; 
+            z-index: 10 !important; 
+        }
+        .border-red { border: 15px solid #e74c3c !important; border-radius: 20px; }
+        .border-blue { border: 15px solid #3498db !important; border-radius: 20px; }
+
+        .prompt-box { position: absolute; top: 5%; width: 100%; text-align: center; z-index: 20; }
+        .prompt-content { display: inline-block; background: rgba(255,255,255,0.95); padding: 10px 30px; border-radius: 30px; font-size: 20px; border: 2px solid #ccc; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+
+        .instructions { background: white; border-radius: 20px; padding: 40px; max-width: 1000px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); text-align: center; overflow-y: auto; max-height: 90vh; }
+        .indent-text { text-align: left; text-indent: 2em; line-height: 1.8; font-size: 17px; margin: 20px 0; color: #444; }
+        
+        .box-container { display: flex; justify-content: center; gap: 30px; margin: 20px 0; }
+        .info-box { flex: 1; padding: 25px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        .box-red { background: #fff5f5; border: 2px solid #e74c3c; }
+        .box-blue { background: #f0f7ff; border: 2px solid #3498db; }
+
+        .form-card { background: white; border-radius: 20px; padding: 50px; width: 480px; box-shadow: 0 25px 50px rgba(0,0,0,0.5); text-align: center; }
+        .form-group { margin-bottom: 25px; text-align: left; }
+        .form-label { display: block; margin-bottom: 8px; font-weight: bold; color: #2c3e50; }
+        .form-input, .form-select { width: 100%; padding: 14px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; }
+        .btn-start { background: #3498db; color: white; border: none; padding: 16px; border-radius: 10px; font-size: 18px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.3s; }
+        
+        .key { background: #f8f9fa; padding: 4px 10px; border-radius: 6px; border: 1px solid #ccc; font-weight: bold; color: #333; }
+        .color-red { color: #e74c3c; font-weight: bold; }
+        .color-blue { color: #3498db; font-weight: bold; }
+        .fixation { font-size: 80px; color: white; }
+
+        /* 示例展示区 */
+        .example-area { background: #f9f9f9; padding: 15px; border-radius: 10px; margin-top: 20px; border: 1px dashed #ccc; }
+        .example-img { width: 100px; height: 80px; object-fit: contain; background: white; border: 3px solid #3498db; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div id="experiment-container">
+        <div id="participant-form">
+            <div class="form-card">
+                <h1 style="color: #2c3e50; margin-bottom: 10px;">语码切换实验</h1>
+                <p style="color: #7f8c8d; margin-bottom: 35px;">上海理工大学德语专业研究项目</p>
+                <div class="form-group">
+                    <label class="form-label">学号 (Student ID)</label>
+                    <input type="text" id="p-id" class="form-input" placeholder="请输入您的学号">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">年级 (Grade)</label>
+                    <select id="p-grade" class="form-select">
+                        <option value="大二">大二 (Sophomore)</option>
+                        <option value="大四">大四 (Senior)</option>
+                    </select>
+                </div>
+                <button onclick="collectAndStart()" class="btn-start">确认并进入实验</button>
+            </div>
+        </div>
+    </div>
+    <script src="main.js"></script>
+    <script>
+        function collectAndStart() {
+            const sid = document.getElementById('p-id').value.trim();
+            if(!sid) { alert("请填写学号以开始实验！"); return; }
+            window.participantInfo = { id: sid, grade: document.getElementById('p-grade').value, startTime: new Date().toISOString() };
+            document.getElementById('experiment-container').innerHTML = `<div class="instructions"><h2>🔄 正在初始化实验环境...</h2><p>请在浏览器弹出权限请求时点击“允许麦克风”</p></div>`;
+            setTimeout(() => { window.startMainExperiment(); }, 800);
+        }
+    </script>
+</body>
+</html>
